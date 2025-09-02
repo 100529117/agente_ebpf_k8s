@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rs-listener
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: attacker-listener
+  namespace: rs-listener
+  labels:
+    agente.monitoreo/habilitado "true"
+spec:
+  containers:
+  - name: listener
+    image: alpine/socat:latest
+    # Este comando pone a socat a escuchar en el puerto 4444 y redirige la
+    # entrada/salida a la terminal estándar, mostrando lo que reciba.
+    command: ["socat", "TCP-LISTEN:4444,fork", "STDOUT"]

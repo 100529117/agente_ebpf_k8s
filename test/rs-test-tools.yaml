@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rs-attack
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rs-test-tools
+  namespace: rs-attack
+  labels:
+    agente.monitoreo/habilitado: "true"
+spec:
+  containers:
+  - name: tools
+    # Esta imagen contiene herramientas comunes de red como netcat, socat, python, etc.
+    image: nicolaka/netshoot:latest
+    command: ["/bin/sh", "-c", "sleep infinity"]
+    securityContext:
+      # Se ejecuta como un usuario sin privilegios para minimizar el riesgo.
+      runAsUser: 1000
+      # Es crucial establecer esto en 'false' para evitar que se sumen puntos
+      # en el detector de escalada de privilegios.
+      allowPrivilegeEscalation: false
+      # No se añaden capacidades adicionales para no activar el sensor 'A_CAPSET'.
+      capabilities:
+        drop:
+        - ALL
+  # Es necesario para que el pod pueda resolver nombres de host externos.
+  dnsPolicy: Default

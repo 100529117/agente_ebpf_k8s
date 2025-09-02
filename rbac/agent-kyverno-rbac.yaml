@@ -1,0 +1,94 @@
+# rbac para que el agente gestione la lista de baneos en su ns=security
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: perpod-ebpf-agent-config
+  namespace: security
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: perpod-ebpf-agent-config
+  namespace: security
+subjects:
+  - kind: ServiceAccount
+    name: perpod-ebpf-agent    
+    namespace: security 
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: perpod-ebpf-agent-config
+---
+# rbac para todo el cluster que permita al agente:
+#  - leer los pods
+#  - crear/actualizar politicas tipo cleanUpPolicy de Kyverno en cualquier namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: perpod-ebpf-agent-cluster
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["kyverno.io"]
+    resources: ["cleanuppolicies"]
+    verbs: ["get", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: perpod-ebpf-agent-cluster
+subjects:
+  - kind: ServiceAccount
+    name: perpod-ebpf-agent 
+    namespace: security 
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: perpod-ebpf-agent-cluster
+  
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: perpod-ebpf-agent-cluster
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["kyverno.io"]
+    resources: ["cleanuppolicies"]
+    verbs: ["get", "create", "update", "patch"]
+  - apiGroups: ["kyverno.io"]
+    resources: ["policies"]  
+    verbs: ["get", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: perpod-ebpf-agent-cluster
+subjects:
+  - kind: ServiceAccount
+    name: perpod-ebpf-agent
+    namespace: security
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: perpod-ebpf-agent-cluster
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: perpod-ebpf-agent
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get","list","watch","patch"] 
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get","list","watch","create","delete"]

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pe-test
+  labels:
+    agente.monitoreo/habilitado: "true"
+spec:
+  securityContext:
+    seccompProfile: { type: Unconfined }
+  containers:
+  - name: tools
+    image: debian:bookworm
+    command: ["/bin/sh","-lc","sleep infinity"]
+    securityContext:
+      allowPrivilegeEscalation: true
+      capabilities:
+        add: ["SYS_ADMIN","SYS_PTRACE","SETUID","SETGID","BPF"]

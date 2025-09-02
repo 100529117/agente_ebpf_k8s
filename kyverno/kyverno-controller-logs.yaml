@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kyverno-log-dump
+  namespace: kyverno
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: kyverno
+          volumes:
+            - name: perpod-ebpf-data
+              hostPath:
+                path: /var/lib/perpod-ebpf
+                type: DirectoryOrCreate
+          containers:
+          - name: dump
+            image: bitnami/kubectl:latest
+            command: ["/bin/sh","-lc"]
+            args:
+            - |
+              TS=$(date -u +%Y%m%dT%H%M%SZ)
+              OUT=/var/run/perpod-ebpf/logs/kyverno-cleanup-${TS}.log
+              kubectl -n kyverno logs deploy/kyverno-cleanup-controller --tail=500 > "$OUT" || true
+            volumeMounts:
+              - name: perpod-ebpf-data
+                mountPath: /var/run/perpod-ebpf

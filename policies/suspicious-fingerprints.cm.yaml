@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: perpod-ebpf-banlist
+  namespace: security
+  labels:
+    app.kubernetes.io/part-of: perpod-ebpf
+data:
+  images: '[]'                 # e.j. ["ghcr.io/acme/app@sha256:...", "docker.io/nginx:latest"]
+  serviceAccounts: '[]'        # e.j. ["default","job-runner"]
+  dangerousCaps: '["SYS_ADMIN","SYS_PTRACE","BPF"]'

@@ -1,0 +1,34 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: deny-known-bad-controllers
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: block-bad-controller-templates
+    match:
+      any:
+      - resources:
+          kinds: ["Deployment","StatefulSet","DaemonSet","Job","CronJob"]
+          operations: ["CREATE","UPDATE"]
+    context:
+    - name: ban
+      configMap:
+        name: perpod-ebpf-banlist
+        namespace: security
+    validate:
+      message: >-
+        Controller blocked: template matches runtime incident fingerprint (image or serviceAccount).
+      deny:
+        conditions:
+          any:
+          - key: "{{ request.object.spec.template.spec.serviceAccountName }}"
+            operator: AnyIn
+            value: "{{ ban.data.serviceAccounts | parse_json(@) }}"
+          - key: "{{ request.object.spec.template.spec.containers[].image || [] }}"
+            operator: AnyIn
+            value: "{{ ban.data.images | parse_json(@) }}"
+          - key: "{{ request.object.spec.template.spec.initContainers[].image || [] }}"
+            operator: AnyIn
+            value: "{{ ban.data.images | parse_json(@) }}"

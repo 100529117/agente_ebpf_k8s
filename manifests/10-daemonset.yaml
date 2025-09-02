@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: perpod-ebpf-agent
+  namespace: security
+spec:
+  selector:
+    matchLabels:
+      app: perpod-ebpf-agent
+  template:
+    metadata:
+      labels:
+        app: perpod-ebpf-agent
+    spec:
+      imagePullSecrets:
+      - name: regcred
+      serviceAccountName: perpod-ebpf-agent
+      hostPID: true
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      tolerations:
+      - operator: Exists
+      containers:
+      - name: agent
+        image: registry.CHANGE_ME.es/perpod-ebpf:latest
+        imagePullPolicy: Always
+        securityContext:
+          privileged: true
+          runAsUser: 0
+          runAsGroup: 0
+          allowPrivilegeEscalation: true
+          seccompProfile:
+            type: Unconfined
+          capabilities:
+            add: ["BPF", "PERFMON", "SYS_ADMIN", "SYS_RESOURCE", "NET_ADMIN", "IPC_LOCK"]
+        env:
+        - name: PERPOD_ROOT
+          value: /var/run/perpod-ebpf
+        volumeMounts:
+        - name: sys
+          mountPath: /sys
+          readOnly: true
+        - name: proc
+          mountPath: /host/proc
+          readOnly: true
+        - name: runctrd
+          mountPath: /run/containerd
+          readOnly: true
+        - name: perpod-ebpf-data
+          mountPath: /var/run/perpod-ebpf
+      volumes:
+      - name: sys
+        hostPath: { path: /sys, type: Directory }
+      - name: proc
+        hostPath: { path: /proc, type: Directory }
+      - name: runctrd
+        hostPath: { path: /run/containerd, type: Directory }
+      - name: perpod-ebpf-data
+        hostPath:
+          path: /var/lib/perpod-ebpf
+          type: DirectoryOrCreate
